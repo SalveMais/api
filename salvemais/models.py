@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import current_app
 
 from . import db
@@ -92,6 +92,7 @@ class Donor(User):
     blood_type = db.ReferenceField(BloodType)
     cpf = db.StringField()
     gender = db.StringField(choices=current_app.config['GENDERS'])
+    birthday = db.DateTimeField()
     height = db.FloatField()
     weigth = db.FloatField()
 
@@ -102,11 +103,36 @@ class Donor(User):
 
     @property
     def latest_donation(self):
-        return Donation.objects(donor=self).orderby('timestamp')[0]
+        return self.donations().orderby('timestamp')[0]
 
     @property
     def blood_volume(self):
         return current_app.config['BLOOD_RATIO'][self.gender] * self.weigth
+
+    @property
+    def years_old(self):
+        return datetime.now().year - self.birthday.year
+
+    @property
+    def can_donate(self):
+        age_check = 18 <= self.years_old <= 60
+
+        weight_check = self.weigth >= 50 if self.weigth else True
+
+        year_donations = self.donations(timestamp__gte=datetime.now() - timedelta(months=12)).count()
+        if self.gender == 'M':
+            month_range = 2  # 60 days
+            yearly_amount = 4  # 4 donations/year
+        else:
+            month_range = 3  # 90 days
+            yearly_amount = 3  # 3 donations/year
+        month_donations = self.donations(timestamp__gte=datetime.now() - timedelta(months=month_range)).count()
+        frequency_check = month_donations < 2 and year_donations < yearly_amount
+        
+        return age_check and weight_check and frequency_check
+
+    def donations(self, **kwargs):
+        return Donation.objects(donor=self, **kwargs)
 
 
 class Hemocenter(User):
