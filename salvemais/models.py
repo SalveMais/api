@@ -1,4 +1,4 @@
-from .app import db
+from . import db
 from .util import cell_chart, protein_chart
 
 
@@ -42,8 +42,8 @@ class BloodType(db.Document):
                 matches.append(blood)
         return matches
 
-    def __str__(self):
-        return "{}{}".format(self.cell, self.protein)
+    def __unicode__(self):
+        return '{}{}'.format(self.cell, self.protein)
 
 # pre-load blood types
 for cell in cell_chart:
