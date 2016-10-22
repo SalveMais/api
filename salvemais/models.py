@@ -1,6 +1,7 @@
 from datetime import datetime
+from flask import current_app
 
-from .app import db
+from . import db
 from .util import cell_chart, protein_chart
 
 
@@ -44,8 +45,8 @@ class BloodType(db.Document):
                 matches.append(blood)
         return matches
 
-    def __str__(self):
-        return "{}{}".format(self.cell, self.protein)
+    def __unicode__(self):
+        return '{}{}'.format(self.cell, self.protein)
 
 # pre-load blood types
 for cell in cell_chart:
@@ -87,13 +88,10 @@ class User(db.Document):
     }
 
 
-
-
-
 class Donor(User):
     blood_type = db.ReferenceField(BloodType)
     cpf = db.StringField()
-    gender = db.StringField(choices=GENDERS)
+    gender = db.StringField(choices=current_app.config['GENDERS'])
     height = db.FloatField()
     weigth = db.FloatField()
 
@@ -108,8 +106,7 @@ class Donor(User):
 
     @property
     def blood_volume(self):
-
-        return blood_ratio[self.gender] * self.weigth
+        return current_app.config['BLOOD_RATIO'][self.gender] * self.weigth
 
 
 class Hemocenter(User):
@@ -119,4 +116,4 @@ class Hemocenter(User):
 class Donation(db.Document):
     donor = db.ReferenceField(Donor)
     hemocenter = db.ReferenceField(Hemocenter)
-    timestamp = db.DatetimeField()
+    timestamp = db.DateTimeField(default=datetime.now)

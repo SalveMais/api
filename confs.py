@@ -7,6 +7,16 @@ class Config:
     TESTING = False
     SECRET_KEY = os.environ.get('SECRET_KEY')
 
+    GENDERS = (
+        ('M', 'Masculino'),
+        ('F', 'Feminino')
+    )
+
+    BLOOD_RATIO = {
+        'M': 62.4,
+        'F': 61.9
+    }
+
 
 class TestConfig(Config):
     TESTING = True
@@ -34,14 +44,3 @@ confs = {
     'prod': ProdConfig,
     'test': TestConfig,
 }
-
-
-blood_ratio = {
-    'M': 62.4,
-    'F': 61.9
-}
-
-GENDERS = (
-    ('M', 'Masculino'),
-    ('F', 'Feminino')
-)
