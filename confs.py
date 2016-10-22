@@ -20,7 +20,7 @@ class DevConfig(Config):
 
 
 class ProdConfig(Config):
-    DATABASE_NAME = 'salvamais'
+    DATABASE_NAME = 'salvemais'
     MONGODB_SETTINGS = {'DB': DATABASE_NAME}
 
 
