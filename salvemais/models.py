@@ -1,5 +1,3 @@
-import re
-
 from .app import db
 from .util import cell_chart, protein_chart
 

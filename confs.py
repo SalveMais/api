@@ -18,6 +18,11 @@ class DevConfig(Config):
     DATABASE_NAME = 'salvemais_dev'
     MONGODB_SETTINGS = {'DB': DATABASE_NAME}
 
+    SOCIAL_FACEBOOK = {
+        'consumer_key': '1825953660954282',
+        'consumer_secret': '5238121e7b618c1f3ec1df41872f6711'
+    }
+
 
 class ProdConfig(Config):
     DATABASE_NAME = 'salvemais'
