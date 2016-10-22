@@ -1,13 +1,24 @@
 from datetime import datetime, timedelta
+
+import re
+from bs4 import BeautifulSoup
 from flask import current_app
 
+from salvemais.util.maps import GoogleMaps
 from . import db
-from .util import cell_chart, protein_chart
+from .util.postmon_api import Postmon
+from .util.data import cell_chart, protein_chart
 
 
 class BloodType(db.Document):
     cell = db.StringField(required=True, choices=('A', 'B', 'AB', 'O'))
     protein = db.StringField(required=True, choices=('+', '-'))
+
+    @classmethod
+    def load(cls):
+        for cell in cell_chart:
+            for protein in protein_chart:
+                BloodType.get(cell=cell, protein=protein)
 
     @classmethod
     def get(cls, blood_type=None, **kwargs):
@@ -48,11 +59,6 @@ class BloodType(db.Document):
     def __unicode__(self):
         return '{}{}'.format(self.cell, self.protein)
 
-# pre-load blood types
-for cell in cell_chart:
-    for protein in protein_chart:
-        BloodType.get(cell=cell, protein=protein)
-
 
 class Address(db.EmbeddedDocument):
     street = db.StringField(max_length=150)
@@ -61,7 +67,9 @@ class Address(db.EmbeddedDocument):
     district = db.StringField(max_length=50)
     city = db.StringField(max_length=50)
     state = db.StringField(max_length=2)
-    cep = db.StringField(max_length=8)
+    cep = db.StringField(max_length=15)
+    lat = db.FloatField()
+    lng = db.FloatField()
 
 
 class Facebook(db.EmbeddedDocument):
@@ -75,9 +83,11 @@ class Google(db.EmbeddedDocument):
 
 
 class User(db.Document):
-    email = db.StringField(required=True)
+    email = db.StringField()
     name = db.StringField(max_length=150)
     nickname = db.StringField(max_length=50)
+
+    phone = db.StringField(max_length=50)
 
     facebook = db.EmbeddedDocumentField(Facebook)
     google = db.EmbeddedDocumentField(Google)
@@ -128,7 +138,7 @@ class Donor(User):
             yearly_amount = 3  # 3 donations/year
         month_donations = self.donations(timestamp__gte=datetime.now() - timedelta(months=month_range)).count()
         frequency_check = month_donations < 2 and year_donations < yearly_amount
-        
+
         return age_check and weight_check and frequency_check
 
     def donations(self, **kwargs):
@@ -138,8 +148,42 @@ class Donor(User):
 class Hemocenter(User):
     address = db.EmbeddedDocumentField(Address)
 
+    @classmethod
+    def load(cls):
+        # url = "http://www2.inca.gov.br/wps/wcm/connect/orientacoes/site/home/hemocentros"
+        # page = urlopen(url).read()
+        page = open('/Users/joaodaher/Downloads/inca_hemo.htm')
+        soup = BeautifulSoup(page, "html.parser")
+
+        for row in soup.find("div", {"id": "conteudo"}).findAll('p'):
+            item = row.contents[0]
+            if item.name == 'font':
+                state_row = str(item.next)
+
+            for item in row.contents[1:]:
+                if item.name == 'strong':
+                    name_row = str(item.next)  # TODO sanitize field
+                elif 'CEP' in item:
+                    address_row = str(item)
+                    cep = re.findall(r'[0-9]{5}-[0-9]{3}', address_row)[0]
+                elif re.match(r'\([0-9]{2}\)[0-9]{8,9}', str(item.next)):
+                    phone_row = str(item.next)  # TODO sanitize field
+
+                    address_kwargs = {'cep': cep}
+                    address_kwargs.update(Postmon.cep(code=cep))
+                    address_kwargs.update(GoogleMaps.get_latlong(address_row))
+
+                    address = Address(**address_kwargs)
+                    Hemocenter(name=name_row, phone=phone_row, address=address).save()
+                else:
+                    pass
+
 
 class Donation(db.Document):
     donor = db.ReferenceField(Donor)
     hemocenter = db.ReferenceField(Hemocenter)
     timestamp = db.DateTimeField(default=datetime.now)
+
+
+BloodType.load()
+Hemocenter.load()

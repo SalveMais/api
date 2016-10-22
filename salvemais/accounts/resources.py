@@ -1,7 +1,7 @@
 from flask import current_app
 
 from . import accounts
-from ..models import Donor
+from ..models import Hemocenter
 
 
 @accounts.route('/test', methods=['GET'])

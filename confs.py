@@ -33,6 +33,10 @@ class DevConfig(Config):
         'consumer_secret': '5238121e7b618c1f3ec1df41872f6711'
     }
 
+    GOOGLE = {
+        'maps_api_key': 'AIzaSyDgpP6m3uAQAGqMf4obpVp7KwYwh2nE0bI'
+    }
+
 
 class ProdConfig(Config):
     DATABASE_NAME = 'salvemais'
