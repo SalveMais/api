@@ -9,9 +9,19 @@ class BloodType(db.Document):
     protein = db.StringField(required=True, choices=('+', '-'))
 
     @classmethod
-    def find(cls, blood_type):
-        cell, protein = re.split(r'[ABO]{2}[+\-]', blood_type)
-        return BloodType.objects.get(cell=cell, protein=protein)
+    def get(cls, blood_type=None, **kwargs):
+        if blood_type:
+            cell, protein = blood_type[:-1], blood_type[-1:]
+            if cell not in cell_chart or protein not in protein_chart:
+                return []
+            kwargs['cell'] = cell
+            kwargs['protein'] = protein
+
+        try:
+            blood = BloodType.objects.get(**kwargs)
+        except cls.DoesNotExist:
+            blood = BloodType(**kwargs).save()
+        return blood
 
     def can_donate(self, to_blood=None):
         pass
@@ -34,15 +44,23 @@ class BloodType(db.Document):
                 matches.append(blood)
         return matches
 
+    def __str__(self):
+        return "{}{}".format(self.cell, self.protein)
+
+# pre-load blood types
+for cell in cell_chart:
+    for protein in protein_chart:
+        BloodType.get(cell=cell, protein=protein)
+
 
 class Address(db.EmbeddedDocument):
     street = db.StringField(max_length=150)
-    number = db.StringField(max_length=150)
-    complement = db.StringField(max_length=150)
-    district = db.StringField(max_length=150)
-    city = db.StringField(max_length=150)
-    state = db.StringField(max_length=150)
-    cep = db.StringField(max_length=150)
+    number = db.StringField(max_length=15)
+    complement = db.StringField(max_length=50)
+    district = db.StringField(max_length=50)
+    city = db.StringField(max_length=50)
+    state = db.StringField(max_length=2)
+    cep = db.StringField(max_length=8)
 
 
 class Facebook(db.EmbeddedDocument):
@@ -70,7 +88,7 @@ class User(db.Document):
 
 
 class Donor(User):
-    blood_type = db.RefereceField(to=BloodType)
+    blood_type = db.ReferenceField(BloodType)
     cpf = db.StringField()
 
 
