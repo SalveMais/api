@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from .app import db
 from .util import cell_chart, protein_chart
 
@@ -85,10 +87,36 @@ class User(db.Document):
     }
 
 
+
+
+
 class Donor(User):
     blood_type = db.ReferenceField(BloodType)
     cpf = db.StringField()
+    gender = db.StringField(choices=GENDERS)
+    height = db.FloatField()
+    weigth = db.FloatField()
+
+    def grace_period(self):
+        latest_donation = self.latest_donation
+        today = datetime.now()
+        return today - latest_donation.timestamp
+
+    @property
+    def latest_donation(self):
+        return Donation.objects(donor=self).orderby('timestamp')[0]
+
+    @property
+    def blood_volume(self):
+
+        return blood_ratio[self.gender] * self.weigth
 
 
 class Hemocenter(User):
     address = db.EmbeddedDocumentField(Address)
+
+
+class Donation(db.Document):
+    donor = db.ReferenceField(Donor)
+    hemocenter = db.ReferenceField(Hemocenter)
+    timestamp = db.DatetimeField()

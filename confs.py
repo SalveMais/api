@@ -34,3 +34,14 @@ confs = {
     'prod': ProdConfig,
     'test': TestConfig,
 }
+
+
+blood_ratio = {
+    'M': 62.4,
+    'F': 61.9
+}
+
+GENDERS = (
+    ('M', 'Masculino'),
+    ('F', 'Feminino')
+)
