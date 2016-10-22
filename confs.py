@@ -10,12 +10,12 @@ class Config:
 
 class TestConfig(Config):
     TESTING = True
-    DATABASE_NAME = 'salvamais_test'
+    DATABASE_NAME = 'salvemais_test'
     MONGODB_SETTINGS = {'DB': DATABASE_NAME}
 
 
 class DevConfig(Config):
-    DATABASE_NAME = 'salvamais_dev'
+    DATABASE_NAME = 'salvemais_dev'
     MONGODB_SETTINGS = {'DB': DATABASE_NAME}
 
 
