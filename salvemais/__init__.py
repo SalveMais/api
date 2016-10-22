@@ -2,11 +2,13 @@ import os
 
 from flask import Flask
 from flask_mongoengine import MongoEngine
+from flask_oauthlib.client import OAuth
 
 from confs import confs
 
 
 db = MongoEngine()
+oauth = OAuth()
 
 
 def create_app(env=None):
@@ -19,6 +21,7 @@ def create_app(env=None):
 
     # register plugins
     db.init_app(app)
+    oauth.init_app(app)
 
     with app.app_context() as app_ctx:
         # registering api blueprint
