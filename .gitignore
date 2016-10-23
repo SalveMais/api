@@ -90,3 +90,6 @@ ENV/
 
 # Sublime
 .project
+
+# iOS
+.DS_Store
