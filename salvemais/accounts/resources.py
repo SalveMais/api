@@ -21,7 +21,6 @@ facebook = oauth.remote_app(
 
 @facebook.tokengetter
 def facebook_tokengetter(token=None):
-    print('#' * 100)
     return token_getter
 
 

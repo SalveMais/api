@@ -40,7 +40,10 @@ class DevConfig(Config):
 
 class ProdConfig(Config):
     DATABASE_NAME = 'salvemais'
-    MONGODB_SETTINGS = {'DB': DATABASE_NAME}
+    MONGODB_SETTINGS = {
+        'DB': DATABASE_NAME,
+        'HOST': os.environ.get('MONGODB_HOST')
+    }
 
 
 confs = {

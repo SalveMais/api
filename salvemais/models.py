@@ -110,13 +110,8 @@ class User(db.Document):
 
     def login(self, password):
         if self.password == password:
-            return {
-                'token': self.token,
-                'status': True,
-                'message': "Senha correta"
-                    }
-        return {'status': False,
-                'message': "Senha incorreta"}
+            return self.token
+        return None
 
 
 class Donor(User):
