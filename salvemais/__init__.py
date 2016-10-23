@@ -23,7 +23,7 @@ def create_app(env=None):
     db.init_app(app)
     oauth.init_app(app)
 
-    with app.app_context() as app_ctx:
+    with app.app_context():
         # registering api blueprint
         from .accounts import accounts as accounts_blueprint
         app.register_blueprint(accounts_blueprint, url_prefix='/v1')

@@ -5,3 +5,4 @@ requests==2.11.1
 beautifulsoup4==4.5.1
 Flask-OAuthlib==0.9.3
 Flask-Script==2.0.5
+Flask-HTTPAuth==3.2.1

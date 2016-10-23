@@ -1,29 +1,16 @@
-import uuid
 from datetime import datetime, timedelta
-import re
-from urllib.request import urlopen
 
-from bs4 import BeautifulSoup
 from flask import current_app
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from salvemais.util.maps import GoogleMaps
 from . import db
-from .util.postmon_api import Postmon
 from .util.data import cell_chart, protein_chart
+from .util.hash import generate_auth_token
 
 
 class BloodType(db.Document):
     cell = db.StringField(required=True, choices=('A', 'B', 'AB', 'O'))
     protein = db.StringField(required=True, choices=('+', '-'))
-
-    @classmethod
-    def load(cls):
-        if Hemocenter.objects():
-            return
-        
-        for cell in cell_chart:
-            for protein in protein_chart:
-                BloodType.get(cell=cell, protein=protein)
 
     @classmethod
     def get(cls, blood_type=None, **kwargs):
@@ -87,39 +74,46 @@ class Google(db.EmbeddedDocument):
     api_token = db.StringField(max_length=150)
 
 
-def create_token():
-    return uuid.uuid1().hex
-
-
 class User(db.Document):
-    email = db.StringField()
+    email = db.EmailField()
+    password_hash = db.StringField(max_length=255)
+    auth_token = db.StringField(max_length=255)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def set_auth_token(self):
+        self.auth_token = generate_auth_token()
+
+    @classmethod
+    def create(cls, **kwargs):
+        user = cls()
+        user.email = kwargs['email']
+        user.set_password(kwargs['password'])
+        user.save()
+        return user
+
+
+class Profile(db.Document):
+    user = db.ReferenceField(User)
+    email = db.EmailField()
     name = db.StringField(max_length=150)
     nickname = db.StringField(max_length=50)
     phone = db.StringField(max_length=50)
-
-    password = db.StringField(max_length=255)
-    token = db.StringField(max_length=255, default=create_token)
 
     facebook = db.EmbeddedDocumentField(Facebook)
     google = db.EmbeddedDocumentField(Google)
 
     meta = {
         'abstract': True,
-        'allow_inheritance': True
+        'allow_inheritance': True,
     }
 
-    def login(self, password):
-        if self.password == password:
-            return {
-                'token': self.token,
-                'status': True,
-                'message': "Senha correta"
-                    }
-        return {'status': False,
-                'message': "Senha incorreta"}
 
-
-class Donor(User):
+class Donor(Profile):
     blood_type = db.ReferenceField(BloodType)
     cpf = db.StringField()
     gender = db.StringField(choices=current_app.config['GENDERS'])
@@ -166,48 +160,11 @@ class Donor(User):
         return Donation.objects(donor=self, **kwargs)
 
 
-class Hemocenter(User):
+class Hemocenter(Profile):
     address = db.EmbeddedDocumentField(Address)
-
-    @classmethod
-    def load(cls):
-        if Hemocenter.objects():
-            return
-
-        url = "http://www2.inca.gov.br/wps/wcm/connect/orientacoes/site/home/hemocentros"
-        page = urlopen(url).read()
-        # page = open('/Users/joaodaher/Downloads/inca_hemo.htm')
-        soup = BeautifulSoup(page, "html.parser")
-
-        for row in soup.find("div", {"id": "conteudo"}).findAll('p'):
-            for item in row.findAll('strong'):
-                c = item.next
-                if c.name == 'u':
-                    continue  # ex: Região Nordeste
-                elif c.name == 'br':
-                    c = c.next
-                name_row = str(c)
-
-                c = c.next.next
-                address_row = str(c)
-                cep = re.findall(r'[0-9]{5}-[0-9]{3}', address_row)[0]
-
-                c = c.next.next
-                phone_row = str(c)
-
-                address_kwargs = {'cep': cep}
-                address_kwargs.update(Postmon.cep(code=cep))
-                address_kwargs.update(GoogleMaps.get_latlong(address_row))
-
-                address = Address(**address_kwargs)
-                Hemocenter(name=name_row, phone=phone_row, address=address).save()
 
 
 class Donation(db.Document):
     donor = db.ReferenceField(Donor)
     hemocenter = db.ReferenceField(Hemocenter)
     timestamp = db.DateTimeField(default=datetime.now)
-
-
-BloodType.load()
-Hemocenter.load()
