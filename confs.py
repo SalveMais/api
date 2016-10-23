@@ -28,7 +28,9 @@ class TestConfig(Config):
 class DevConfig(Config):
     SECRET_KEY = '\x0c\x81zH\xc9\x9fj\x8e+W\xe6/\xf7M\x80\xb8'
     DATABASE_NAME = 'salvemais_dev'
-    MONGODB_SETTINGS = {'DB': DATABASE_NAME}
+    MONGODB_SETTINGS = {
+        'DB': DATABASE_NAME
+    }
 
     FACEBOOK_APP_ID = '1825953660954282'
     FACEBOOK_APP_SECRET = '5238121e7b618c1f3ec1df41872f6711'
@@ -39,10 +41,19 @@ class DevConfig(Config):
 
 
 class ProdConfig(Config):
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+
     DATABASE_NAME = 'salvemais'
     MONGODB_SETTINGS = {
         'DB': DATABASE_NAME,
         'HOST': os.environ.get('MONGODB_HOST')
+    }
+
+    FACEBOOK_APP_ID = '1825953660954282'
+    FACEBOOK_APP_SECRET = '5238121e7b618c1f3ec1df41872f6711'
+
+    GOOGLE = {
+        'maps_api_key': 'AIzaSyC_xC8eVUVl4V4nqBEbghZ2sddKci_6o2o'
     }
 
 
