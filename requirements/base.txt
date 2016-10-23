@@ -4,3 +4,4 @@ mongoengine==0.10.6
 requests==2.11.1
 beautifulsoup4==4.5.1
 Flask-OAuthlib
+Flask-Script==2.0.5

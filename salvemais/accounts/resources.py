@@ -2,6 +2,7 @@ from flask import current_app, request, url_for, session
 
 from .. import oauth
 from . import accounts
+from ..models import Donor
 
 
 token_getter = ''
@@ -24,13 +25,32 @@ def facebook_tokengetter(token=None):
     return token_getter
 
 
-@accounts.route('/test', methods=['GET'])
-def test_endpoint():
-    return 'Test!!!', 200
-
-
 @accounts.route('/login', methods=['GET'])
 def login():
+    email = request.args.get('email')
+    password = request.args.get('password')
+
+    try:
+        donor = Donor.objects.get(email=email)
+        response = {
+            'next': "/dashboard"
+        }
+
+    except Donor.DoesNotExist:
+        donor = Donor(email=email, password=password)
+        response = {
+            'next': "/signup"
+        }
+    token = donor.login(password=password)
+
+    return response.update({
+        'token': token,
+        'status': True,
+    })
+
+
+@accounts.route('/facebook', methods=['GET'])
+def login_facebook():
     next_url = request.args.get('next') or request.referrer or None
     callback = url_for(
         'accounts.facebook_authorized',

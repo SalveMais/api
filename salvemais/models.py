@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta
 import re
 from urllib.request import urlopen
@@ -86,12 +87,18 @@ class Google(db.EmbeddedDocument):
     api_token = db.StringField(max_length=150)
 
 
+def create_token():
+    return uuid.uuid1().hex
+
+
 class User(db.Document):
     email = db.StringField()
     name = db.StringField(max_length=150)
     nickname = db.StringField(max_length=50)
-
     phone = db.StringField(max_length=50)
+
+    password = db.StringField(max_length=255)
+    token = db.StringField(max_length=255, default=create_token)
 
     facebook = db.EmbeddedDocumentField(Facebook)
     google = db.EmbeddedDocumentField(Google)
@@ -100,6 +107,16 @@ class User(db.Document):
         'abstract': True,
         'allow_inheritance': True
     }
+
+    def login(self, password):
+        if self.password == password:
+            return {
+                'token': self.token,
+                'status': True,
+                'message': "Senha correta"
+                    }
+        return {'status': False,
+                'message': "Senha incorreta"}
 
 
 class Donor(User):
